@@ -23,6 +23,12 @@ async function run() {
     const htmlGamesCollection = client.db("GameSpace").collection("htmlGames");
     const gamesCollection = client.db("GameSpace").collection("games");
 
+    //featured e sports games
+    app.get("/downloadGames", async (req, res) => {
+      const query = {};
+      const games = await gamesCollection.find(query).limit(6).toArray();
+      res.send(games);
+    });
     // all shop data load from mongodb
     app.get("/shop", async (req, res) => {
       const query = {};
