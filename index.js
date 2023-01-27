@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 
 const port = process.env.PORT || 9000;
@@ -33,7 +33,7 @@ async function run() {
     //featured e sports games
     app.get("/downloadGames", async (req, res) => {
       const query = {};
-      const games = await gamesCollection.find(query).limit(6).toArray();
+      const games = await gamesCollection.find(query).limit(4).toArray();
       res.send(games);
     });
     // all shop data load from mongodb
@@ -50,6 +50,7 @@ async function run() {
       res.send(htmlGames);
     });
 
+
     // user post
     app.post('/user', async(req, res) => {
       const data = req.body;
@@ -57,6 +58,18 @@ async function run() {
       res.send(result);
     })
     
+
+    //get a single html games by id
+    app.get("/playGames/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {
+        _id: ObjectId(id),
+      };
+      const singleHtmlGame = await htmlGamesCollection.findOne(query);
+      console.log(singleHtmlGame);
+      res.send(singleHtmlGame);
+    });
+
   } finally {
   }
 }
