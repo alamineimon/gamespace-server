@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const app = express();
-const port = process.env.PORT || 8000;
+const port = process.env.PORT || 5000;
 require("dotenv").config();
 
 //mmiddle wares
@@ -16,8 +16,26 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 
 async function run() {
-    try{
-  
+    try{ 
+        const usersCollection = client.db("GameSpace").collection("UsersInfo");
+
+        // get
+
+        app.get("users", async(req, res) => {
+          const query = {}
+          const result = usersCollection.find(query).toArray();
+          res.send(result);
+        });
+
+        // post
+
+        app.post("user", async(req, res) => {
+          const user = req.body;
+          const result = usersCollection.insertOne(user)
+          res.send(result);
+        });
+
+        // Delete
     }
     finally{
   
