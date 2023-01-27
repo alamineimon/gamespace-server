@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
+
 const port = process.env.PORT || 9000;
 require("dotenv").config();
 
@@ -18,11 +19,17 @@ const client = new MongoClient(uri, {
 });
 
 async function run() {
+
   try {
     const usersCollection = client.db("GameSpace").collection("users");
     const htmlGamesCollection = client.db("GameSpace").collection("htmlGames");
     const gamesCollection = client.db("GameSpace").collection("games");
-
+    // get users 
+    app.get("/users", async(req, res) => {
+      const query = {};
+      const users = await usersCollection.find(query).toArray();
+      res.send();
+    })
     //featured e sports games
     app.get("/downloadGames", async (req, res) => {
       const query = {};
@@ -42,6 +49,16 @@ async function run() {
       const htmlGames = await htmlGamesCollection.find(query).toArray();
       res.send(htmlGames);
     });
+
+
+    // user post
+    app.post('/user', async(req, res) => {
+      const data = req.body;
+      const result = await usersCollection.insertOne(data);
+      res.send(result);
+    })
+    
+
     //get a single html games by id
     app.get("/playGames/:id", async (req, res) => {
       const id = req.params.id;
@@ -52,6 +69,7 @@ async function run() {
       console.log(singleHtmlGame);
       res.send(singleHtmlGame);
     });
+
   } finally {
   }
 }
