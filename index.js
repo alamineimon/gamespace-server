@@ -33,9 +33,17 @@ async function run() {
     //featured e sports games
     app.get("/downloadGames", async (req, res) => {
       const query = {};
-      const games = await gamesCollection.find(query).limit(4).toArray();
+      const games = await gamesCollection.find(query).toArray();
       res.send(games);
     });
+
+    app.get("/downloadGames/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: ObjectId(id)};
+      const downloadGames = await gamesCollection.findOne(query);
+      res.send(downloadGames);
+    });
+
     // all shop data load from mongodb
     app.get("/shop", async (req, res) => {
       const query = {};
@@ -66,7 +74,6 @@ async function run() {
         _id: ObjectId(id),
       };
       const singleHtmlGame = await htmlGamesCollection.findOne(query);
-      console.log(singleHtmlGame);
       res.send(singleHtmlGame);
     });
 
