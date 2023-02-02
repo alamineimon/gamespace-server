@@ -19,17 +19,16 @@ const client = new MongoClient(uri, {
 });
 
 async function run() {
-
   try {
     const usersCollection = client.db("GameSpace").collection("users");
     const htmlGamesCollection = client.db("GameSpace").collection("htmlGames");
     const gamesCollection = client.db("GameSpace").collection("games");
-    // get users 
-    app.get("/users", async(req, res) => {
+    // get users
+    app.get("/users", async (req, res) => {
       const query = {};
       const users = await usersCollection.find(query).toArray();
       res.send();
-    })
+    });
     //featured e sports games
     app.get("/downloadGames", async (req, res) => {
       const query = {};
@@ -39,7 +38,7 @@ async function run() {
 
     app.get("/downloadGames/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: ObjectId(id)};
+      const query = { _id: ObjectId(id) };
       const downloadGames = await gamesCollection.findOne(query);
       res.send(downloadGames);
     });
@@ -57,15 +56,19 @@ async function run() {
       const htmlGames = await htmlGamesCollection.find(query).toArray();
       res.send(htmlGames);
     });
-
+    // get categories only
+    app.get("/categories", async (req, res) => {
+      const projection = { category: 1, _id: 0 };
+      const categories = await htmlGamesCollection.distinct("category");
+      res.send(categories);
+    });
 
     // user post
-    app.post('/user', async(req, res) => {
+    app.post("/user", async (req, res) => {
       const data = req.body;
       const result = await usersCollection.insertOne(data);
       res.send(result);
-    })
-    
+    });
 
     //get a single html games by id
     app.get("/playGames/:id", async (req, res) => {
@@ -76,7 +79,6 @@ async function run() {
       const singleHtmlGame = await htmlGamesCollection.findOne(query);
       res.send(singleHtmlGame);
     });
-
   } finally {
   }
 }
