@@ -24,7 +24,9 @@ async function run() {
     const htmlGamesCollection = client.db("GameSpace").collection("htmlGames");
     const gamesCollection = client.db("GameSpace").collection("games");
     const gamesComment = client.db("GameSpace").collection("comment");
-    const orderedGameCollection = client.db("GameSpace").collection("orderedGames");
+    const orderedGameCollection = client
+      .db("GameSpace")
+      .collection("orderedGames");
 
     // get users
 
@@ -47,11 +49,11 @@ async function run() {
       res.send(downloadGames);
     });
 
-    app.post('/comment', async (req, res) => {
+    app.post("/comment", async (req, res) => {
       const users = req.body;
       const result = await gamesComment.insertOne(users);
       res.send(result);
-    })
+    });
     app.get("/comment", async (req, res) => {
       const query = {};
       const comment = await gamesComment.find(query).toArray();
@@ -59,24 +61,23 @@ async function run() {
     });
     app.delete("/comment/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: ObjectId(id) }
-      const result = await gamesComment.deleteOne(query)
+      const query = { _id: ObjectId(id) };
+      const result = await gamesComment.deleteOne(query);
       res.send(result);
-    })
-    app.patch('/comment/:id',  async (req, res) => {
+    });
+    app.patch("/comment/:id", async (req, res) => {
       const id = req.params.id;
       const user = req.body;
-      const query = { _id: ObjectId(id) }
+      const query = { _id: ObjectId(id) };
       const option = { upsert: true };
       const updateDoc = {
-          $set: {
-              comment: user.comment,
-          }
-      }
+        $set: {
+          comment: user.comment,
+        },
+      };
       const result = await gamesComment.updateOne(query, updateDoc, option);
       res.send(result);
-
-  })
+    });
 
     // all shop data load from mongodb
     app.get("/shop", async (req, res) => {
@@ -97,12 +98,11 @@ async function run() {
       res.send(categories);
     });
     // user post
-    app.post('/user', async (req, res) => {
+    app.post("/user", async (req, res) => {
       const data = req.body;
       const result = await usersCollection.insertOne(data);
       res.send(result);
-    })
-
+    });
 
     app.post("/user", async (req, res) => {
       const data = req.body;
@@ -120,23 +120,26 @@ async function run() {
       res.send(singleHtmlGame);
     });
 
+    // add single html games to database
+    app.post("/addHtmlGame", async (req, res) => {
+      const game = req.body;
+      const result = await htmlGamesCollection.insertOne(game);
+      res.send(result);
+    });
+
     // post orderd games
     app.post("/orderedGames", async (req, res) => {
       const order = req.body;
-      console.log(order)
+      console.log(order);
       const result = await orderedGameCollection.insertOne(order);
       res.send(result);
     });
 
-    app.post('/bookings', async(req, res) => {
+    app.post("/bookings", async (req, res) => {
       const data = req.body;
-      const result = await orderedGameCollection.insertOne(data)
+      const result = await orderedGameCollection.insertOne(data);
       res.send(result);
-    })
-    
-
-
-
+    });
   } finally {
   }
 }
