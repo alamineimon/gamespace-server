@@ -58,7 +58,6 @@ async function run() {
     });
     // get categories only
     app.get("/categories", async (req, res) => {
-      const projection = { category: 1, _id: 0 };
       const categories = await htmlGamesCollection.distinct("category");
       res.send(categories);
     });
