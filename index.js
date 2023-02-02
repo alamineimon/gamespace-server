@@ -23,6 +23,9 @@ async function run() {
     const usersCollection = client.db("GameSpace").collection("users");
     const htmlGamesCollection = client.db("GameSpace").collection("htmlGames");
     const gamesCollection = client.db("GameSpace").collection("games");
+    const orderedGameCollection = client.db("GameSpace").collection("orderedGames");
+
+
     // get users
     app.get("/users", async (req, res) => {
       const query = {};
@@ -62,14 +65,12 @@ async function run() {
       const categories = await htmlGamesCollection.distinct("category");
       res.send(categories);
     });
-
     // user post
     app.post("/user", async (req, res) => {
       const data = req.body;
       const result = await usersCollection.insertOne(data);
       res.send(result);
     });
-
     //get a single html games by id
     app.get("/playGames/:id", async (req, res) => {
       const id = req.params.id;
@@ -79,6 +80,24 @@ async function run() {
       const singleHtmlGame = await htmlGamesCollection.findOne(query);
       res.send(singleHtmlGame);
     });
+
+    // post orderd games
+    app.post("/orderedGames", async (req, res) => {
+      const order = req.body;
+      console.log(order)
+      const result = await orderedGameCollection.insertOne(order);
+      res.send(result);
+    });
+
+    app.post('/bookings', async(req, res) => {
+      const data = req.body;
+      const result = await orderedGameCollection.insertOne(data)
+      res.send(result);
+    })
+    
+
+
+
   } finally {
   }
 }
