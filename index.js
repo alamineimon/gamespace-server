@@ -23,10 +23,11 @@ async function run() {
     const usersCollection = client.db("GameSpace").collection("users");
     const htmlGamesCollection = client.db("GameSpace").collection("htmlGames");
     const gamesCollection = client.db("GameSpace").collection("games");
+    const gamesComment = client.db("GameSpace").collection("comment");
     const orderedGameCollection = client.db("GameSpace").collection("orderedGames");
 
-
     // get users
+
     app.get("/users", async (req, res) => {
       const query = {};
       const users = await usersCollection.find(query).toArray();
@@ -45,6 +46,37 @@ async function run() {
       const downloadGames = await gamesCollection.findOne(query);
       res.send(downloadGames);
     });
+
+    app.post('/comment', async (req, res) => {
+      const users = req.body;
+      const result = await gamesComment.insertOne(users);
+      res.send(result);
+    })
+    app.get("/comment", async (req, res) => {
+      const query = {};
+      const comment = await gamesComment.find(query).toArray();
+      res.send(comment);
+    });
+    app.delete("/comment/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) }
+      const result = await gamesComment.deleteOne(query)
+      res.send(result);
+    })
+    app.patch('/comment/:id',  async (req, res) => {
+      const id = req.params.id;
+      const user = req.body;
+      const query = { _id: ObjectId(id) }
+      const option = { upsert: true };
+      const updateDoc = {
+          $set: {
+              comment: user.comment,
+          }
+      }
+      const result = await gamesComment.updateOne(query, updateDoc, option);
+      res.send(result);
+
+  })
 
     // all shop data load from mongodb
     app.get("/shop", async (req, res) => {
@@ -66,11 +98,19 @@ async function run() {
       res.send(categories);
     });
     // user post
+    app.post('/user', async (req, res) => {
+      const data = req.body;
+      const result = await usersCollection.insertOne(data);
+      res.send(result);
+    })
+
+
     app.post("/user", async (req, res) => {
       const data = req.body;
       const result = await usersCollection.insertOne(data);
       res.send(result);
     });
+
     //get a single html games by id
     app.get("/playGames/:id", async (req, res) => {
       const id = req.params.id;
