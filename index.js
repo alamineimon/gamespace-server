@@ -134,11 +134,32 @@ async function run() {
       const result = await orderedGameCollection.insertOne(order);
       res.send(result);
     });
-
     app.post("/bookings", async (req, res) => {
       const data = req.body;
       const result = await orderedGameCollection.insertOne(data);
       res.send(result);
+    })
+    // get all orderd games by email
+    app.get("/orderedGames", async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+      const bookings = await orderedGameCollection.find(query).toArray();
+      res.send(bookings);
+    });
+
+    // delete orderd games data by id
+    app.delete("/orderedGames/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await orderedGameCollection.deleteOne(filter);
+      res.send(result);
+    });
+    // get order by email
+    app.get("/orderedGames/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const orderedGames = await orderedGameCollection.findOne(query);
+      res.send(orderedGames);
     });
   } finally {
   }
