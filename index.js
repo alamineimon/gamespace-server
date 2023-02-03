@@ -28,7 +28,7 @@ async function run() {
     app.get("/users", async(req, res) => {
       const query = {};
       const users = await usersCollection.find(query).toArray();
-      res.send();
+      res.send(users);
     })
     //featured e sports games
     app.get("/downloadGames", async (req, res) => {
@@ -58,6 +58,14 @@ async function run() {
       res.send(htmlGames);
     });
 
+    // admin route
+    app.get('/users/admin/:email', async(req, res) => {
+      const email = req.params.email;
+      const query ={email: email};
+      const user = await usersCollection.findOne(query);
+      res.send({isAdmin: user?.role === 'admin'})
+  });
+
 
     // user post
     app.post('/user', async(req, res) => {
@@ -75,6 +83,13 @@ async function run() {
       };
       const singleHtmlGame = await htmlGamesCollection.findOne(query);
       res.send(singleHtmlGame);
+    });
+
+    app.delete('/delete/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await usersCollection.deleteOne(query);
+      res.send(result);
     });
 
   } finally {
