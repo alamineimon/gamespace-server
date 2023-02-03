@@ -19,20 +19,22 @@ const client = new MongoClient(uri, {
 });
 
 async function run() {
-
   try {
     const usersCollection = client.db("GameSpace").collection("users");
     const htmlGamesCollection = client.db("GameSpace").collection("htmlGames");
     const gamesCollection = client.db("GameSpace").collection("games");
-    const orderedGameCollection = client.db("GameSpace").collection("orderedGames");
+    const gamesComment = client.db("GameSpace").collection("comment");
+    const orderedGameCollection = client
+      .db("GameSpace")
+      .collection("orderedGames");
 
+    // get users
 
-    // get users 
-    app.get("/users", async(req, res) => {
+    app.get("/users", async (req, res) => {
       const query = {};
       const users = await usersCollection.find(query).toArray();
       res.send();
-    })
+    });
     //featured e sports games
     app.get("/downloadGames", async (req, res) => {
       const query = {};
@@ -42,9 +44,39 @@ async function run() {
 
     app.get("/downloadGames/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: ObjectId(id)};
+      const query = { _id: ObjectId(id) };
       const downloadGames = await gamesCollection.findOne(query);
       res.send(downloadGames);
+    });
+
+    app.post("/comment", async (req, res) => {
+      const users = req.body;
+      const result = await gamesComment.insertOne(users);
+      res.send(result);
+    });
+    app.get("/comment", async (req, res) => {
+      const query = {};
+      const comment = await gamesComment.find(query).toArray();
+      res.send(comment);
+    });
+    app.delete("/comment/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await gamesComment.deleteOne(query);
+      res.send(result);
+    });
+    app.patch("/comment/:id", async (req, res) => {
+      const id = req.params.id;
+      const user = req.body;
+      const query = { _id: ObjectId(id) };
+      const option = { upsert: true };
+      const updateDoc = {
+        $set: {
+          comment: user.comment,
+        },
+      };
+      const result = await gamesComment.updateOne(query, updateDoc, option);
+      res.send(result);
     });
 
     // all shop data load from mongodb
@@ -60,14 +92,24 @@ async function run() {
       const htmlGames = await htmlGamesCollection.find(query).toArray();
       res.send(htmlGames);
     });
-
+    // get categories only
+    app.get("/categories", async (req, res) => {
+      const categories = await htmlGamesCollection.distinct("category");
+      res.send(categories);
+    });
     // user post
-    app.post('/user', async(req, res) => {
+    app.post("/user", async (req, res) => {
       const data = req.body;
       const result = await usersCollection.insertOne(data);
       res.send(result);
-    })
-    
+    });
+
+    app.post("/user", async (req, res) => {
+      const data = req.body;
+      const result = await usersCollection.insertOne(data);
+      res.send(result);
+    });
+
     //get a single html games by id
     app.get("/playGames/:id", async (req, res) => {
       const id = req.params.id;
@@ -78,15 +120,25 @@ async function run() {
       res.send(singleHtmlGame);
     });
 
+    // add single html games to database
+    app.post("/addHtmlGame", async (req, res) => {
+      const game = req.body;
+      const result = await htmlGamesCollection.insertOne(game);
+      res.send(result);
+    });
 
     // post orderd games
-    app.post('/orderedGames', async(req, res) => {
+    app.post("/orderedGames", async (req, res) => {
+      const order = req.body;
+      console.log(order);
+      const result = await orderedGameCollection.insertOne(order);
+      res.send(result);
+    });
+    app.post("/bookings", async (req, res) => {
       const data = req.body;
-      const result = await orderedGameCollection.insertOne(data)
+      const result = await orderedGameCollection.insertOne(data);
       res.send(result);
     })
-    
-
     // get all orderd games by email
     app.get("/orderedGames", async (req, res) => {
       const email = req.query.email;
@@ -109,12 +161,6 @@ async function run() {
       const orderedGames = await orderedGameCollection.findOne(query);
       res.send(orderedGames);
     });
-
-
-
-
-
-
   } finally {
   }
 }
