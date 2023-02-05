@@ -138,6 +138,36 @@ async function run() {
       const result = await htmlGamesCollection.deleteOne(query);
       res.send(result);
     });
+    //update a single html games
+    app.put("/updateHtmlGame/:id", async (req, res) => {
+      const id = req.params.id;
+      const game = req.body;
+      const query = {
+        _id: ObjectId(id),
+      };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          gameName: game.gameName,
+
+          authorName: game.authorName,
+
+          gameLink: game.gameLink,
+
+          thumbnail: game.thumbnail,
+
+          category: game.category,
+
+          description: game.description,
+        },
+      };
+      const result = await htmlGamesCollection.updateOne(
+        query,
+        updatedDoc,
+        options
+      );
+      res.send(result);
+    });
     //delete user
     app.delete("/delete/:id", async (req, res) => {
       const id = req.params.id;
