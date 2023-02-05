@@ -34,7 +34,7 @@ async function run() {
       const query = {};
       const users = await usersCollection.find(query).toArray();
       res.send(users);
-    })
+    });
 
     //featured e sports games
     app.get("/downloadGames", async (req, res) => {
@@ -87,20 +87,13 @@ async function run() {
       res.send(games);
     });
 
-    // all play-games data load from mongodb
-    app.get("/play-games", async (req, res) => {
-      const query = {};
-      const htmlGames = await htmlGamesCollection.find(query).toArray();
-      res.send(htmlGames);
-    });
-    
     // admin route
-    app.get('/users/admin/:email', async(req, res) => {
+    app.get("/users/admin/:email", async (req, res) => {
       const email = req.params.email;
-      const query ={email: email};
+      const query = { email: email };
       const user = await usersCollection.findOne(query);
-      res.send({isAdmin: user?.role === 'admin'})
-  });
+      res.send({ isAdmin: user?.role === "admin" });
+    });
 
     // get categories only
     app.get("/categories", async (req, res) => {
@@ -120,6 +113,12 @@ async function run() {
       const result = await usersCollection.insertOne(data);
       res.send(result);
     });
+    // all play-games data load from mongodb
+    app.get("/play-games", async (req, res) => {
+      const query = {};
+      const htmlGames = await htmlGamesCollection.find(query).toArray();
+      res.send(htmlGames);
+    });
 
     //get a single html games by id
     app.get("/playGames/:id", async (req, res) => {
@@ -130,8 +129,17 @@ async function run() {
       const singleHtmlGame = await htmlGamesCollection.findOne(query);
       res.send(singleHtmlGame);
     });
-
-    app.delete('/delete/:id', async(req, res) => {
+    //delete a single html games
+    app.delete("/deleteHtmlGame/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {
+        _id: ObjectId(id),
+      };
+      const result = await htmlGamesCollection.deleteOne(query);
+      res.send(result);
+    });
+    //delete user
+    app.delete("/delete/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await usersCollection.deleteOne(query);
@@ -156,7 +164,7 @@ async function run() {
       const data = req.body;
       const result = await orderedGameCollection.insertOne(data);
       res.send(result);
-    })
+    });
     // get all orderd games by email
     app.get("/orderedGames", async (req, res) => {
       const email = req.query.email;
