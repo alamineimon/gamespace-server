@@ -168,6 +168,52 @@ async function run() {
       );
       res.send(result);
     });
+    //favorite html games
+    app.put("/handleFavorite/:id", async (req, res) => {
+      const gameid = req.params.id;
+      const userEmail = req.query.email;
+      const options = { upsert: true };
+      const query = {
+        _id: ObjectId(gameid),
+      };
+      const query2 = {
+        _id: ObjectId(gameid),
+        favorites: { $all: [userEmail] },
+      };
+      const exist = await htmlGamesCollection.findOne(query2);
+      if (!exist) {
+        const updatedDoc = {
+          $push: {
+            favorites: userEmail,
+          },
+        };
+        const result = await htmlGamesCollection.updateOne(
+          query,
+          updatedDoc,
+          options
+        );
+        return res.send(result);
+      }
+      const updatedDoc = {
+        $pull: {
+          favorites: userEmail,
+        },
+      };
+      const result = await htmlGamesCollection.updateOne(
+        query,
+        updatedDoc,
+        options
+      );
+      res.send(result);
+    });
+    //get favorite games
+    app.get("/favoriteGames", async (req, res) => {
+      const userEmail = req.query.email;
+      const result = await htmlGamesCollection
+        .find({ favorites: { $in: [userEmail] } })
+        .toArray();
+      res.send(result);
+    });
     //delete user
     app.delete("/delete/:id", async (req, res) => {
       const id = req.params.id;
