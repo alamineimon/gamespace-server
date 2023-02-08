@@ -1,4 +1,5 @@
 const express = require("express");
+const sgMail = require('@sendgrid/mail')
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
@@ -17,6 +18,26 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
+
+
+javascript
+sgMail.setApiKey("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")
+const msg = {
+  to: 'hdelower68@gmail.com', // Change to your recipient
+  from: 'hdelower68@gmail.com', // Change to your verified sender
+  subject: 'Congratualtion You are a member of GameSpace',
+  text: 'and easy to do anywhere, even with Node.js',
+  html: '<strong>and easy to do anywhere, even with Node.js</strong>',
+}
+sgMail
+  .send(msg)
+  .then(() => {
+    console.log('Email sent')
+  })
+  .catch((error) => {
+    console.error(error)
+  })
+
 
 async function run() {
   try {
