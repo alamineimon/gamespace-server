@@ -203,7 +203,6 @@ async function run() {
     // post orderd games
     app.post("/orderedGames", async (req, res) => {
       const order = req.body;
-      console.log(order);
       const result = await orderedGameCollection.insertOne(order);
       res.send(result);
     });
