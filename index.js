@@ -26,9 +26,6 @@ async function run() {
     const gamesCollection = client.db("GameSpace").collection("games");
     const gamesComment = client.db("GameSpace").collection("comment");
     const paymentsCollection = client.db("GameSpace").collection("payments");
-    const orderedGameCollection = client
-      .db("GameSpace")
-      .collection("orderedGames");
     const orderedGameCollection = client.db("GameSpace").collection("orderedGames");
 
 
