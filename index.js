@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
+const stripe = require("stripe")("sk_test_51M6QZ6IlSJrakpLcRB6srpU0MYT767eqSG5AHt0bwrfnjHQnZzdps5MpU6R7Qhvip0dC2EQlvbXWQ9KslQKIEVVs00rFRWl8WP");
 
 const port = process.env.PORT || 9000;
 require("dotenv").config();
@@ -24,7 +25,14 @@ async function run() {
     const htmlGamesCollection = client.db("GameSpace").collection("htmlGames");
     const gamesCollection = client.db("GameSpace").collection("games");
     const gamesComment = client.db("GameSpace").collection("comment");
+    const paymentsCollection = client.db("GameSpace").collection("payments");
+    const orderedGameCollection = client
+      .db("GameSpace")
+      .collection("orderedGames");
     const orderedGameCollection = client.db("GameSpace").collection("orderedGames");
+
+
+    const activePlayerProfile = client.db("GameSpace").collection("activeProfile");
 
     // get users
 
@@ -167,6 +175,52 @@ async function run() {
       );
       res.send(result);
     });
+    //favorite html games
+    app.put("/handleFavorite/:id", async (req, res) => {
+      const gameid = req.params.id;
+      const userEmail = req.query.email;
+      const options = { upsert: true };
+      const query = {
+        _id: ObjectId(gameid),
+      };
+      const query2 = {
+        _id: ObjectId(gameid),
+        favorites: { $all: [userEmail] },
+      };
+      const exist = await htmlGamesCollection.findOne(query2);
+      if (!exist) {
+        const updatedDoc = {
+          $push: {
+            favorites: userEmail,
+          },
+        };
+        const result = await htmlGamesCollection.updateOne(
+          query,
+          updatedDoc,
+          options
+        );
+        return res.send(result);
+      }
+      const updatedDoc = {
+        $pull: {
+          favorites: userEmail,
+        },
+      };
+      const result = await htmlGamesCollection.updateOne(
+        query,
+        updatedDoc,
+        options
+      );
+      res.send(result);
+    });
+    //get favorite games
+    app.get("/favoriteGames", async (req, res) => {
+      const userEmail = req.query.email;
+      const result = await htmlGamesCollection
+        .find({ favorites: { $in: [userEmail] } })
+        .toArray();
+      res.send(result);
+    });
     //delete user
     app.delete("/delete/:id", async (req, res) => {
       const id = req.params.id;
@@ -185,7 +239,6 @@ async function run() {
     // post orderd games
     app.post("/orderedGames", async (req, res) => {
       const order = req.body;
-      console.log(order);
       const result = await orderedGameCollection.insertOne(order);
       res.send(result);
     });
@@ -216,6 +269,68 @@ async function run() {
       const orderedGames = await orderedGameCollection.findOne(query);
       res.send(orderedGames);
     });
+
+    app.post('/create-payment-intent', async (req, res) => {
+      const booking = req.body;
+      const price = booking.price;
+      const amount = price * 100;
+
+      const paymentIntent = await stripe.paymentIntents.create({
+          currency: 'usd',
+          amount: amount,
+          "payment_method_types": [
+              "card"
+          ]
+      });
+      res.send({
+          clientSecret: paymentIntent.client_secret,
+      });
+  });
+
+  app.post('/payments', async (req, res) => {
+      const payment = req.body;
+      const result = await paymentsCollection.insertOne(payment);
+      const id = payment.bookingId
+      const filter = { _id: ObjectId(id) }
+      const updatedDoc = {
+          $set: {
+              paid: true,
+              transactionId: payment.transactionId
+          }
+      }
+      const updatedResult = await paymentsCollection.updateOne(filter, updatedDoc)
+      res.send(result);
+  })
+
+    // ---------------------------------------------------------------------------------------
+    // // post all payment data
+
+    // // app.post("/api/stripe-payment", (req, res) => {
+    // app.post("/stripe-payment", (req, res) => {
+    //   const stripe = require("stripe")(
+    //     "sk_test_51M6QZ6IlSJrakpLcRB6srpU0MYT767eqSG5AHt0bwrfnjHQnZzdps5MpU6R7Qhvip0dC2EQlvbXWQ9KslQKIEVVs00rFRWl8WP"
+    //   );
+
+    //   const { amount, email, token } = req.body;
+
+    //   stripe.customers
+    //     .create({
+    //       email: email,
+    //       source: token.id,
+    //       name: token.card.name,
+    //     })
+    //     .then((customer) => {
+    //       return stripe.charges.create({
+    //         amount: parseFloat(amount) * 100,
+    //         description: `Payment for USD ${amount}`,
+    //         currency: "USD",
+    //         customer: customer.id,
+    //       });
+    //     })
+    //     .then((charge) => res.status(200).send(charge))
+    //     .catch((err) => console.log(err));
+    // });
+    // ------------------------------------------------------------------------------
   } finally {
   }
 }
