@@ -30,7 +30,10 @@ async function run() {
       .db("GameSpace")
       .collection("orderedGames");
     const orderedGameCollection = client.db("GameSpace").collection("orderedGames");
+
+
     const activePlayerProfile = client.db("GameSpace").collection("activeProfile");
+
     // get users
 
     app.get("/users", async (req, res) => {
@@ -110,21 +113,8 @@ async function run() {
       const result = await usersCollection.insertOne(data);
       res.send(result);
     });
-    // Active Players
-    app.post("/activePlayres", async (req, res) =>{
-      const data = req.body;
-      const result = await activePlayerProfile.insertOne(data)
-      res.send(result);
-    })
-    app.get("/activePlayres", async (req, res) => {
-       const query = req.body;
-      console.log(query)
-      const activePlayres = await activePlayerProfile.find(query).toArray();
-      console.log(activePlayres)
-      res.send(activePlayres);
-    });
-
-
+  
+    
     app.post("/user", async (req, res) => {
       const data = req.body;
       const result = await usersCollection.insertOne(data);
