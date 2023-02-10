@@ -37,14 +37,41 @@ async function run() {
     const orderedGameCollection = client.db("GameSpace").collection("orderedGames");
 
 
-    const activePlayerProfile = client.db("GameSpace").collection("activeProfile");
-
     // get users
-
     app.get("/users", async (req, res) => {
       const query = {};
       const users = await usersCollection.find(query).toArray();
       res.send(users);
+    });
+
+    // user Profile Update
+    app.get("/profileUpdate/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      res.send(user);
+    })
+
+    app.patch("/profileUpdate/:id", async (req, res) => {
+      const id = req.params.id;
+      const profile = req.body;
+      const query = { _id: ObjectId(id) };
+      const option = { upsert: true };
+      const updateDoc = {
+        $set: {
+          name: profile.name,
+          email: profile.email,
+          photoURL: profile.photoURL,
+          facebook: profile.facebook,
+          instagram: profile.instagram,
+          youTube: profile.youTube,
+          twitter: profile.twitter,
+          bio: profile.bio,
+
+        },
+      };
+      const result = await usersCollection.updateOne(query, updateDoc, option);
+      res.send(result);
     });
 
     //featured e sports games
@@ -118,8 +145,8 @@ async function run() {
       const result = await usersCollection.insertOne(data);
       res.send(result);
     });
-  
-    
+
+
     app.post("/user", async (req, res) => {
       const data = req.body;
       const result = await usersCollection.insertOne(data);
@@ -281,27 +308,27 @@ async function run() {
       const amount = price * 100;
 
       const paymentIntent = await stripe.paymentIntents.create({
-          currency: 'usd',
-          amount: amount,
-          "payment_method_types": [
-              "card"
-          ]
+        currency: 'usd',
+        amount: amount,
+        "payment_method_types": [
+          "card"
+        ]
       });
       res.send({
-          clientSecret: paymentIntent.client_secret,
+        clientSecret: paymentIntent.client_secret,
       });
-  });
+    });
 
-  app.post('/payments', async (req, res) => {
+    app.post('/payments', async (req, res) => {
       const payment = req.body;
       const result = await paymentsCollection.insertOne(payment);
       const id = payment.bookingId
       const filter = { _id: ObjectId(id) }
       const updatedDoc = {
-          $set: {
-              paid: true,
-              transactionId: payment.transactionId
-          }
+        $set: {
+          paid: true,
+          transactionId: payment.transactionId
+        }
       }
       const updatedResult = await paymentsCollection.updateOne(filter, updatedDoc)
       res.send(result);
@@ -379,6 +406,8 @@ app.get("/orderedgames/by-transaction-id/:id", async (req, res) => {
   console.log(id, order);
   res.send(order);
 });
+    })
+
 
     // ---------------------------------------------------------------------------------------
     // // post all payment data
