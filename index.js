@@ -1,11 +1,19 @@
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const SSLCommerzPayment = require("sslcommerz-lts");
 const app = express();
 const stripe = require("stripe")("sk_test_51M6QZ6IlSJrakpLcRB6srpU0MYT767eqSG5AHt0bwrfnjHQnZzdps5MpU6R7Qhvip0dC2EQlvbXWQ9KslQKIEVVs00rFRWl8WP");
 
 const port = process.env.PORT || 9000;
 require("dotenv").config();
+
+
+// bkash secret kay
+const store_id = 'games63e5aebfd1941'
+const store_passwd = 'games63e5aebfd1941@ssl'
+const is_live = false //true for live, false for sandbox
+
 
 //middle wares
 app.use(cors());
@@ -298,6 +306,79 @@ async function run() {
       const updatedResult = await paymentsCollection.updateOne(filter, updatedDoc)
       res.send(result);
   })
+  app.post('/bkashpayment', async (req, res) =>{
+    const order = req.body;
+    const { service, email, address} = order;
+    const orderedService = await orderedGameCollection.findOne({ _id: ObjectId(order.service)});
+    // console.log(orderedService)
+    const transactionId = new ObjectId().toString();
+    const data = {
+      total_amount: orderedService.price,
+      currency: order.currency,
+      tran_id: transactionId, // use unique tran_id for each api call
+      success_url: `http://localhost:9000/payment/success?transactionId=${transactionId}`,
+      fail_url: `http://localhost:9000/payment/fail?transactionId=${transactionId}`,
+      cancel_url: `http://localhost:9000/payment/cancel`,
+      ipn_url: "http://localhost:3030/ipn",
+      shipping_method: "Courier",
+      product_name: "Computer.",
+      product_category: "Electronic",
+      product_profile: "general",
+      cus_name: order.customer,
+      cus_email: order.email,
+      cus_add1: order.address,
+      cus_add2: "Dhaka",
+      cus_city: "Dhaka",
+      cus_state: "Dhaka",
+      cus_postcode: "1000",
+      cus_country: "Bangladesh",
+      cus_phone: "01711111111",
+      cus_fax: "01711111111",
+      ship_name: "Customer Name",
+      ship_add1: "Dhaka",
+      ship_add2: "Dhaka",
+      ship_city: "Dhaka",
+      ship_state: "Dhaka",
+      ship_postcode: order.postcode,
+      ship_country: "Bangladesh",
+    };
+    // console.log(data)
+    const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
+    sslcz.init(data).then((apiResponse) => {
+      // Redirect the user to payment gateway
+      let GatewayPageURL = apiResponse.GatewayPageURL;
+      console.log(apiResponse);
+      paymentsCollection.insertOne({
+        ...order,
+        price: orderedService.price,
+        transactionId,
+        paid: false,
+      });
+      res.send({url: GatewayPageURL});
+    });
+  })
+  
+  app.post("/payment/success", async (req, res) => {
+    const { transactionId } = req.query;
+    if(!transactionId){
+        return res.redirect(`http://localhost:9000/payment/fail`);
+    }
+    const result = await paymentsCollection.updateOne(
+      { transactionId },
+      { $set: { paid: true, paidAt: new Date() } }
+    );
+
+    if(result.modifiedCount > 0){
+        res.redirect(`http://localhost:3000/payment/success?transactionId=${transactionId}`);
+    }
+});
+
+app.get("/orderedgames/by-transaction-id/:id", async (req, res) => {
+  const { id } = req.params;
+  const order = await paymentsCollection.findOne({ transactionId: id });
+  console.log(id, order);
+  res.send(order);
+});
 
     // ---------------------------------------------------------------------------------------
     // // post all payment data
