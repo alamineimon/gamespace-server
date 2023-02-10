@@ -3,17 +3,17 @@ const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const SSLCommerzPayment = require("sslcommerz-lts");
 const app = express();
-const stripe = require("stripe")("sk_test_51M6QZ6IlSJrakpLcRB6srpU0MYT767eqSG5AHt0bwrfnjHQnZzdps5MpU6R7Qhvip0dC2EQlvbXWQ9KslQKIEVVs00rFRWl8WP");
+const stripe = require("stripe")(
+  "sk_test_51M6QZ6IlSJrakpLcRB6srpU0MYT767eqSG5AHt0bwrfnjHQnZzdps5MpU6R7Qhvip0dC2EQlvbXWQ9KslQKIEVVs00rFRWl8WP"
+);
 
 const port = process.env.PORT || 9000;
 require("dotenv").config();
 
-
 // bkash secret kay
-const store_id = 'games63e5aebfd1941'
-const store_passwd = 'games63e5aebfd1941@ssl'
-const is_live = false //true for live, false for sandbox
-
+const store_id = "games63e5aebfd1941";
+const store_passwd = "games63e5aebfd1941@ssl";
+const is_live = false; //true for live, false for sandbox
 
 //middle wares
 app.use(cors());
@@ -34,8 +34,9 @@ async function run() {
     const gamesCollection = client.db("GameSpace").collection("games");
     const gamesComment = client.db("GameSpace").collection("comment");
     const paymentsCollection = client.db("GameSpace").collection("payments");
-    const orderedGameCollection = client.db("GameSpace").collection("orderedGames");
-
+    const orderedGameCollection = client
+      .db("GameSpace")
+      .collection("orderedGames");
 
     // get users
     app.get("/users", async (req, res) => {
@@ -50,7 +51,7 @@ async function run() {
       const query = { email: email };
       const user = await usersCollection.findOne(query);
       res.send(user);
-    })
+    });
 
     app.patch("/profileUpdate/:id", async (req, res) => {
       const id = req.params.id;
@@ -67,7 +68,6 @@ async function run() {
           youTube: profile.youTube,
           twitter: profile.twitter,
           bio: profile.bio,
-
         },
       };
       const result = await usersCollection.updateOne(query, updateDoc, option);
@@ -145,7 +145,6 @@ async function run() {
       const result = await usersCollection.insertOne(data);
       res.send(result);
     });
-
 
     app.post("/user", async (req, res) => {
       const data = req.body;
@@ -253,6 +252,21 @@ async function run() {
         .toArray();
       res.send(result);
     });
+    //get popular games
+    app.get("/popularGames", async (req, res) => {
+      const games = await htmlGamesCollection.find({}).toArray();
+      const gamesWithFavoritesLength = games.map((game) => {
+        return {
+          ...game,
+          favoritesLength: game.favorites?.length,
+        };
+      });
+      const sortedGames = gamesWithFavoritesLength.sort(
+        (a, b) => b.favoritesLength - a.favoritesLength
+      );
+      const top3Games = sortedGames.slice(0, 4);
+      res.send(top3Games);
+    });
     //delete user
     app.delete("/delete/:id", async (req, res) => {
       const id = req.params.id;
@@ -302,112 +316,112 @@ async function run() {
       res.send(orderedGames);
     });
 
-    app.post('/create-payment-intent', async (req, res) => {
+    app.post("/create-payment-intent", async (req, res) => {
       const booking = req.body;
       const price = booking.price;
       const amount = price * 100;
 
       const paymentIntent = await stripe.paymentIntents.create({
-        currency: 'usd',
+        currency: "usd",
         amount: amount,
-        "payment_method_types": [
-          "card"
-        ]
+        payment_method_types: ["card"],
       });
       res.send({
         clientSecret: paymentIntent.client_secret,
       });
     });
 
-    app.post('/payments', async (req, res) => {
+    app.post("/payments", async (req, res) => {
       const payment = req.body;
       const result = await paymentsCollection.insertOne(payment);
-      const id = payment.bookingId
-      const filter = { _id: ObjectId(id) }
+      const id = payment.bookingId;
+      const filter = { _id: ObjectId(id) };
       const updatedDoc = {
         $set: {
           paid: true,
-          transactionId: payment.transactionId
-        }
-      }
-      const updatedResult = await paymentsCollection.updateOne(filter, updatedDoc)
+          transactionId: payment.transactionId,
+        },
+      };
+      const updatedResult = await paymentsCollection.updateOne(
+        filter,
+        updatedDoc
+      );
       res.send(result);
-  })
-  app.post('/bkashpayment', async (req, res) =>{
-    const order = req.body;
-    const { service, email, address} = order;
-    const orderedService = await orderedGameCollection.findOne({ _id: ObjectId(order.service)});
-    // console.log(orderedService)
-    const transactionId = new ObjectId().toString();
-    const data = {
-      total_amount: orderedService.price,
-      currency: order.currency,
-      tran_id: transactionId, // use unique tran_id for each api call
-      success_url: `http://localhost:9000/payment/success?transactionId=${transactionId}`,
-      fail_url: `http://localhost:9000/payment/fail?transactionId=${transactionId}`,
-      cancel_url: `http://localhost:9000/payment/cancel`,
-      ipn_url: "http://localhost:3030/ipn",
-      shipping_method: "Courier",
-      product_name: "Computer.",
-      product_category: "Electronic",
-      product_profile: "general",
-      cus_name: order.customer,
-      cus_email: order.email,
-      cus_add1: order.address,
-      cus_add2: "Dhaka",
-      cus_city: "Dhaka",
-      cus_state: "Dhaka",
-      cus_postcode: "1000",
-      cus_country: "Bangladesh",
-      cus_phone: "01711111111",
-      cus_fax: "01711111111",
-      ship_name: "Customer Name",
-      ship_add1: "Dhaka",
-      ship_add2: "Dhaka",
-      ship_city: "Dhaka",
-      ship_state: "Dhaka",
-      ship_postcode: order.postcode,
-      ship_country: "Bangladesh",
-    };
-    // console.log(data)
-    const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
-    sslcz.init(data).then((apiResponse) => {
-      // Redirect the user to payment gateway
-      let GatewayPageURL = apiResponse.GatewayPageURL;
-      console.log(apiResponse);
-      paymentsCollection.insertOne({
-        ...order,
-        price: orderedService.price,
-        transactionId,
-        paid: false,
-      });
-      res.send({url: GatewayPageURL});
     });
-  })
-  
-  app.post("/payment/success", async (req, res) => {
-    const { transactionId } = req.query;
-    if(!transactionId){
-        return res.redirect(`http://localhost:9000/payment/fail`);
-    }
-    const result = await paymentsCollection.updateOne(
-      { transactionId },
-      { $set: { paid: true, paidAt: new Date() } }
-    );
+    app.post("/bkashpayment", async (req, res) => {
+      const order = req.body;
+      const { service, email, address } = order;
+      const orderedService = await orderedGameCollection.findOne({
+        _id: ObjectId(order.service),
+      });
+      const transactionId = new ObjectId().toString();
+      const data = {
+        total_amount: orderedService.price,
+        currency: order.currency,
+        tran_id: transactionId, // use unique tran_id for each api call
+        success_url: `https://gamespace-server.vercel.app/payment/success?transactionId=${transactionId}`,
+        fail_url: `https://gamespace-server.vercel.app/payment/fail?transactionId=${transactionId}`,
+        cancel_url: `https://gamespace-server.vercel.app/payment/cancel`,
+        ipn_url: "http://localhost:3030/ipn",
+        shipping_method: "Courier",
+        product_name: "Computer.",
+        product_category: "Electronic",
+        product_profile: "general",
+        cus_name: order.customer,
+        cus_email: order.email,
+        cus_add1: order.address,
+        cus_add2: "Dhaka",
+        cus_city: "Dhaka",
+        cus_state: "Dhaka",
+        cus_postcode: "1000",
+        cus_country: "Bangladesh",
+        cus_phone: "01711111111",
+        cus_fax: "01711111111",
+        ship_name: "Customer Name",
+        ship_add1: "Dhaka",
+        ship_add2: "Dhaka",
+        ship_city: "Dhaka",
+        ship_state: "Dhaka",
+        ship_postcode: order.postcode,
+        ship_country: "Bangladesh",
+      };
+      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
+      sslcz.init(data).then((apiResponse) => {
+        // Redirect the user to payment gateway
+        let GatewayPageURL = apiResponse.GatewayPageURL;
+        paymentsCollection.insertOne({
+          ...order,
+          price: orderedService.price,
+          transactionId,
+          paid: false,
+        });
+        res.send({ url: GatewayPageURL });
+      });
+    });
 
-    if(result.modifiedCount > 0){
-        res.redirect(`http://localhost:3000/payment/success?transactionId=${transactionId}`);
-    }
-});
+    app.post("/payment/success", async (req, res) => {
+      const { transactionId } = req.query;
+      if (!transactionId) {
+        return res.redirect(`https://gamespace-server.vercel.app/payment/fail`);
+      }
+      const result = await paymentsCollection.updateOne(
+        { transactionId },
+        { $set: { paid: true, paidAt: new Date() } }
+      );
 
-app.get("/orderedgames/by-transaction-id/:id", async (req, res) => {
-  const { id } = req.params;
-  const order = await paymentsCollection.findOne({ transactionId: id });
-  console.log(id, order);
-  res.send(order);
-});
-    })
+      if (result.modifiedCount > 0) {
+        res.redirect(
+          `https://gamespace777.netlify.app/payment/success?transactionId=${transactionId}`
+        );
+      }
+    });
 
+    app.get("/orderedgames/by-transaction-id/:id", async (req, res) => {
+      const { id } = req.params;
+      const order = await paymentsCollection.findOne({ transactionId: id });
+
+      res.send(order);
+    });
 
     // ---------------------------------------------------------------------------------------
     // // post all payment data
