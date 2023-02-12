@@ -35,6 +35,12 @@ async function run() {
       const users = await usersCollection.find(query).toArray();
       res.send(users);
     });
+    app.get("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {_id : ObjectId(id)}
+      const users = await usersCollection.findOne(query)
+      res.send(users);
+    });
 
     // user Profile Update
     app.get("/profileUpdate/:email", async (req, res) => {
