@@ -38,6 +38,14 @@ async function run() {
       .db("GameSpace")
       .collection("orderedGames");
 
+      // admin
+      const verifyAdmin = async (req, res, next) => {
+        const email = req.query.email;
+        const query = { email: email };
+        const result = await usersCollection.findOne(query);
+        next();
+      }
+
     // get users
     app.get("/users", async (req, res) => {
       const query = {};
@@ -123,6 +131,20 @@ async function run() {
       const result = await gamesComment.updateOne(query, updateDoc, option);
       res.send(result);
     });
+    
+    // make admin
+    app.put("/users/admin/:id", async (req, res) => {
+        const id = req.params.id;
+        const query = {_id: ObjectId(id)};
+        const options = {upsert: true};
+        const updateDoc = {
+          $set: {
+            role: 'admin'
+          }
+        }
+        const result = await usersCollection.updateOne(query, updateDoc, options);
+        res.send(result);
+    })
 
     // all shop data load from mongodb
     app.get("/shop", async (req, res) => {
@@ -136,6 +158,7 @@ async function run() {
       const email = req.params.email;
       const query = { email: email };
       const user = await usersCollection.findOne(query);
+
       res.send({ isAdmin: user?.role === "admin" });
     });
 
