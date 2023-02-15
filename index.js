@@ -1,11 +1,18 @@
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+
+const jwt = require('jsonwebtoken');
+const app = express();
+const stripe = require("stripe")("sk_test_51M6QZ6IlSJrakpLcRB6srpU0MYT767eqSG5AHt0bwrfnjHQnZzdps5MpU6R7Qhvip0dC2EQlvbXWQ9KslQKIEVVs00rFRWl8WP");
+const tokenNumber = '07e896b1b1fe22e4c5adc05a098b0cf74727bea64e9c6a178be0b0906cac08782c666128219abd7b480b4a6ddfe6da34a3618579f3d20fce4483f42f1c16a275';
+
 const SSLCommerzPayment = require("sslcommerz-lts");
 const app = express();
 const stripe = require("stripe")(
   "sk_test_51M6QZ6IlSJrakpLcRB6srpU0MYT767eqSG5AHt0bwrfnjHQnZzdps5MpU6R7Qhvip0dC2EQlvbXWQ9KslQKIEVVs00rFRWl8WP"
 );
+
 
 const port = process.env.PORT || 9000;
 require("dotenv").config();
@@ -27,6 +34,21 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+      return res.status(401).send('unauthrized access')
+  }
+  const token = authHeader.split(' ')[1];
+  jwt.verify(token, tokenNumber, function (err, decoded) {
+      if (err) {
+          return res.status(401).send({ message: 'forbidden access' })
+      }
+      req.decoded = decoded;
+      next();
+  })
+}
+
 async function run() {
   try {
     const usersCollection = client.db("GameSpace").collection("users");
@@ -34,6 +56,21 @@ async function run() {
     const gamesCollection = client.db("GameSpace").collection("games");
     const gamesComment = client.db("GameSpace").collection("comment");
     const paymentsCollection = client.db("GameSpace").collection("payments");
+
+    const orderedGameCollection = client.db("GameSpace").collection("orderedGames");
+
+    // ======== Access token ==========///////
+    app.get('/jwt', async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email }
+      const user = await usersCollection.findOne(query);
+      if (user) {
+        const token = jwt.sign({ email }, tokenNumber, { expiresIn: '10d' })
+        return res.send({ accessToken: token })
+    }
+      res.status(403).send({ accessToken: '' })
+    })
+
     const orderedGameCollection = client
       .db("GameSpace")
       .collection("orderedGames");
@@ -46,15 +83,17 @@ async function run() {
         next();
       }
 
+
     // get users
-    app.get("/users", async (req, res) => {
+    app.get("/users", verifyJWT, async (req, res) => {
       const query = {};
       const users = await usersCollection.find(query).toArray();
       res.send(users);
     });
+
     app.get("/users/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id : ObjectId(id)}
+      const query = { _id: ObjectId(id) }
       const users = await usersCollection.findOne(query)
       res.send(users);
     });
@@ -64,6 +103,7 @@ async function run() {
       const email = req.params.email;
       const query = { email: email };
       const user = await usersCollection.findOne(query);
+      console.log(user);
       res.send(user);
     });
 
@@ -89,7 +129,7 @@ async function run() {
     });
 
     //featured e sports games
-    app.get("/downloadGames", async (req, res) => {
+    app.get("/downloadGames", verifyJWT, async (req, res) => {
       const query = {};
       const games = await gamesCollection.find(query).toArray();
       res.send(games);
@@ -102,7 +142,7 @@ async function run() {
       res.send(downloadGames);
     });
 
-    app.post("/comment", async (req, res) => {
+    app.post("/comment", verifyJWT, async (req, res) => {
       const users = req.body;
       const result = await gamesComment.insertOne(users);
       res.send(result);
@@ -112,13 +152,13 @@ async function run() {
       const comment = await gamesComment.find(query).toArray();
       res.send(comment);
     });
-    app.delete("/comment/:id", async (req, res) => {
+    app.delete("/comment/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await gamesComment.deleteOne(query);
       res.send(result);
     });
-    app.patch("/comment/:id", async (req, res) => {
+    app.patch("/comment/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const user = req.body;
       const query = { _id: ObjectId(id) };
@@ -181,7 +221,7 @@ async function run() {
       res.send(result);
     });
     // all play-games data load from mongodb
-    app.get("/play-games", async (req, res) => {
+    app.get("/play-games", verifyJWT, async (req, res) => {
       const query = {};
       const htmlGames = await htmlGamesCollection.find(query).toArray();
       res.send(htmlGames);
@@ -197,7 +237,7 @@ async function run() {
       res.send(singleHtmlGame);
     });
     //delete a single html games
-    app.delete("/deleteHtmlGame/:id", async (req, res) => {
+    app.delete("/deleteHtmlGame/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = {
         _id: ObjectId(id),
@@ -206,7 +246,7 @@ async function run() {
       res.send(result);
     });
     //update a single html games
-    app.put("/updateHtmlGame/:id", async (req, res) => {
+    app.put("/updateHtmlGame/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const game = req.body;
       const query = {
@@ -274,7 +314,7 @@ async function run() {
       res.send(result);
     });
     //get favorite games
-    app.get("/favoriteGames", async (req, res) => {
+    app.get("/favoriteGames", verifyJWT, async (req, res) => {
       const userEmail = req.query.email;
       const result = await htmlGamesCollection
         .find({ favorites: { $in: [userEmail] } })
@@ -297,7 +337,7 @@ async function run() {
       res.send(top3Games);
     });
     //delete user
-    app.delete("/delete/:id", async (req, res) => {
+    app.delete("/delete/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await usersCollection.deleteOne(query);
@@ -305,14 +345,14 @@ async function run() {
     });
 
     // add single html games to database
-    app.post("/addHtmlGame", async (req, res) => {
+    app.post("/addHtmlGame", verifyJWT, async (req, res) => {
       const game = req.body;
       const result = await htmlGamesCollection.insertOne(game);
       res.send(result);
     });
 
     // post orderd games
-    app.post("/orderedGames", async (req, res) => {
+    app.post("/orderedGames", verifyJWT, async (req, res) => {
       const order = req.body;
       const result = await orderedGameCollection.insertOne(order);
       res.send(result);
@@ -331,7 +371,7 @@ async function run() {
     });
 
     // delete orderd games data by id
-    app.delete("/orderedGames/:id", async (req, res) => {
+    app.delete("/orderedGames/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
       const result = await orderedGameCollection.deleteOne(filter);
