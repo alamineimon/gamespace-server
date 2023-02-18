@@ -2,13 +2,13 @@ const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const SSLCommerzPayment = require("sslcommerz-lts");
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 const app = express();
-const stripe = require("stripe")("sk_test_51M6QZ6IlSJrakpLcRB6srpU0MYT767eqSG5AHt0bwrfnjHQnZzdps5MpU6R7Qhvip0dC2EQlvbXWQ9KslQKIEVVs00rFRWl8WP");
-const tokenNumber = '07e896b1b1fe22e4c5adc05a098b0cf74727bea64e9c6a178be0b0906cac08782c666128219abd7b480b4a6ddfe6da34a3618579f3d20fce4483f42f1c16a275';
-
-
-
+const stripe = require("stripe")(
+  "sk_test_51M6QZ6IlSJrakpLcRB6srpU0MYT767eqSG5AHt0bwrfnjHQnZzdps5MpU6R7Qhvip0dC2EQlvbXWQ9KslQKIEVVs00rFRWl8WP"
+);
+const tokenNumber =
+  "07e896b1b1fe22e4c5adc05a098b0cf74727bea64e9c6a178be0b0906cac08782c666128219abd7b480b4a6ddfe6da34a3618579f3d20fce4483f42f1c16a275";
 
 const port = process.env.PORT || 9000;
 require("dotenv").config();
@@ -57,7 +57,9 @@ async function run() {
     const gamesComment = client.db("GameSpace").collection("comment");
     const paymentsCollection = client.db("GameSpace").collection("payments");
 
-    const orderedGameCollection = client.db("GameSpace").collection("orderedGames");
+    const orderedGameCollection = client
+      .db("GameSpace")
+      .collection("orderedGames");
 
     // ======== Access token ==========///////
     // app.get('/jwt', async (req, res) => {
@@ -71,7 +73,6 @@ async function run() {
     //   res.status(403).send({ accessToken: '' })
     // })
 
-
     // admin
     const verifyAdmin = async (req, res, next) => {
       const email = req.query.email;
@@ -79,7 +80,6 @@ async function run() {
       const result = await usersCollection.findOne(query);
       next();
     };
-
 
     // get users
     app.get("/users", async (req, res) => {
@@ -100,7 +100,6 @@ async function run() {
       const email = req.params.email;
       const query = { email: email };
       const user = await usersCollection.findOne(query);
-      console.log(user);
       res.send(user);
     });
 
@@ -134,7 +133,7 @@ async function run() {
     //featured e sports games
     app.get("/trendingGames", async (req, res) => {
       const query = {
-        ratings:"5.0"
+        ratings: "5.0",
       };
       const games = await gamesCollection.find(query).toArray();
       res.send(games);
@@ -412,13 +411,16 @@ async function run() {
       const id = payment.bookingId;
       const filter = { _id: ObjectId(id) };
       const updatedDoc = {
-          $set: {
-              paid: true,
-              transactionId: payment.transactionId,
-              paidAt: new Date() 
-          }
-      }
-      const updatedResult = await paymentsCollection.updateOne(filter, updatedDoc)
+        $set: {
+          paid: true,
+          transactionId: payment.transactionId,
+          paidAt: new Date(),
+        },
+      };
+      const updatedResult = await paymentsCollection.updateOne(
+        filter,
+        updatedDoc
+      );
 
       res.send(result);
     });
@@ -605,7 +607,7 @@ async function run() {
         email: userEmail,
       };
       const mainUser = await usersCollection.findOne(query);
-      let frindsCount = mainUser.friends;
+      let frindsCount = mainUser?.friends;
       if (Array.isArray(frindsCount)) {
         const usersQuery = { email: { $in: frindsCount } };
         const result = await usersCollection
@@ -789,7 +791,6 @@ async function run() {
         .toArray();
       res.send(result);
     });
-
   } finally {
   }
 }
