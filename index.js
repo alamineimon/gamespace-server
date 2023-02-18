@@ -30,20 +30,20 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
-function verifyJWT(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-      return res.status(401).send('unauthrized access')
-  }
-  const token = authHeader.split(' ')[1];
-  jwt.verify(token, tokenNumber, function (err, decoded) {
-      if (err) {
-          return res.status(401).send({ message: 'forbidden access' })
-      }
-      req.decoded = decoded;
-      next();
-  })
-}
+// function verifyJWT(req, res, next) {
+//   const authHeader = req.headers.authorization;
+//   if (!authHeader) {
+//       return res.status(401).send('unauthrized access')
+//   }
+//   const token = authHeader.split(' ')[1];
+//   jwt.verify(token, tokenNumber, function (err, decoded) {
+//       if (err) {
+//           return res.status(401).send({ message: 'forbidden access' })
+//       }
+//       req.decoded = decoded;
+//       next();
+//   })
+// }
 
 async function run() {
   try {
@@ -60,16 +60,16 @@ async function run() {
     const orderedGameCollection = client.db("GameSpace").collection("orderedGames");
 
     // ======== Access token ==========///////
-    app.get('/jwt', async (req, res) => {
-      const email = req.query.email;
-      const query = { email: email }
-      const user = await usersCollection.findOne(query);
-      if (user) {
-        const token = jwt.sign({ email }, tokenNumber, { expiresIn: '10d' })
-        return res.send({ accessToken: token })
-    }
-      res.status(403).send({ accessToken: '' })
-    })
+    // app.get('/jwt', async (req, res) => {
+    //   const email = req.query.email;
+    //   const query = { email: email }
+    //   const user = await usersCollection.findOne(query);
+    //   if (user) {
+    //     const token = jwt.sign({ email }, tokenNumber, { expiresIn: '10d' })
+    //     return res.send({ accessToken: token })
+    // }
+    //   res.status(403).send({ accessToken: '' })
+    // })
 
 
     // admin
@@ -584,7 +584,7 @@ async function run() {
         email: userEmail,
       };
       const mainUser = await usersCollection.findOne(query);
-      let friendReqList = mainUser.friendRequest;
+      let friendReqList = mainUser?.friendRequest;
       if (Array.isArray(friendReqList)) {
         const usersQuery = { email: { $in: friendReqList } };
         const result = await usersCollection
