@@ -53,6 +53,14 @@ async function run() {
       const games = await gamesCollection.find(query).toArray();
       res.send(games);
     });
+    //featured e sports games
+    app.get("/trendingGames", async (req, res) => {
+      const query = {
+        ratings:"5.0"
+      };
+      const games = await gamesCollection.find(query).toArray();
+      res.send(games);
+    });
 
     app.get("/downloadGames/:id", async (req, res) => {
       const id = req.params.id;
@@ -300,7 +308,8 @@ async function run() {
       const updatedDoc = {
           $set: {
               paid: true,
-              transactionId: payment.transactionId
+              transactionId: payment.transactionId,
+              paidAt: new Date() 
           }
       }
       const updatedResult = await paymentsCollection.updateOne(filter, updatedDoc)
@@ -380,35 +389,6 @@ app.get("/orderedgames/by-transaction-id/:id", async (req, res) => {
   res.send(order);
 });
 
-    // ---------------------------------------------------------------------------------------
-    // // post all payment data
-
-    // // app.post("/api/stripe-payment", (req, res) => {
-    // app.post("/stripe-payment", (req, res) => {
-    //   const stripe = require("stripe")(
-    //     "sk_test_51M6QZ6IlSJrakpLcRB6srpU0MYT767eqSG5AHt0bwrfnjHQnZzdps5MpU6R7Qhvip0dC2EQlvbXWQ9KslQKIEVVs00rFRWl8WP"
-    //   );
-
-    //   const { amount, email, token } = req.body;
-
-    //   stripe.customers
-    //     .create({
-    //       email: email,
-    //       source: token.id,
-    //       name: token.card.name,
-    //     })
-    //     .then((customer) => {
-    //       return stripe.charges.create({
-    //         amount: parseFloat(amount) * 100,
-    //         description: `Payment for USD ${amount}`,
-    //         currency: "USD",
-    //         customer: customer.id,
-    //       });
-    //     })
-    //     .then((charge) => res.status(200).send(charge))
-    //     .catch((err) => console.log(err));
-    // });
-    // ------------------------------------------------------------------------------
   } finally {
   }
 }
