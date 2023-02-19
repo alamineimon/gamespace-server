@@ -605,7 +605,7 @@ async function run() {
         email: userEmail,
       };
       const mainUser = await usersCollection.findOne(query);
-      let frindsCount = mainUser.friends;
+      let frindsCount = mainUser?.friends;
       if (Array.isArray(frindsCount)) {
         const usersQuery = { email: { $in: frindsCount } };
         const result = await usersCollection
