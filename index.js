@@ -95,6 +95,15 @@ async function run() {
       res.send(users);
     });
 
+    //get user by email address
+    app.get("/playerprofile/:email", async (req, res) => {
+      const userEmail = req.params.email;
+      const query = {
+        email: userEmail,
+      };
+      const result = await usersCollection.findOne(query);
+      res.send(result);
+    });
     // user Profile Update
     app.get("/profileUpdate/:email", async (req, res) => {
       const email = req.params.email;
@@ -219,11 +228,6 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/user", async (req, res) => {
-      const data = req.body;
-      const result = await usersCollection.insertOne(data);
-      res.send(result);
-    });
     // all play-games data load from mongodb
     app.get("/play-games", async (req, res) => {
       const query = {};
