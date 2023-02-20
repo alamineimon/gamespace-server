@@ -416,7 +416,6 @@ async function run() {
       const filter = { _id: ObjectId(id) };
       const updatedDoc = {
         $set: {
-          paid: true,
           transactionId: payment.transactionId,
           paidAt: new Date(),
         },
@@ -439,7 +438,7 @@ async function run() {
         total_amount: orderedService.price,
         currency: order.currency,
         tran_id: transactionId, // use unique tran_id for each api call
-        success_url: `https://gamespace-server.vercel.app/payment/success?transactionId=${transactionId}`,
+        success_url: `https://gamespace-server.vercel.app/payment/success?transactionId=${transactionId}&service=${service}`,
         fail_url: `https://gamespace-server.vercel.app/payment/fail?transactionId=${transactionId}`,
         cancel_url: `https://gamespace-server.vercel.app/payment/cancel`,
         ipn_url: "http://localhost:3030/ipn",
@@ -478,15 +477,25 @@ async function run() {
         res.send({ url: GatewayPageURL });
       });
     });
-
+    //bkash payment success
     app.post("/payment/success", async (req, res) => {
-      const { transactionId } = req.query;
+      const { transactionId, service } = req.query;
       if (!transactionId) {
         return res.redirect(`https://gamespace-server.vercel.app/payment/fail`);
       }
       const result = await paymentsCollection.updateOne(
         { transactionId },
-        { $set: { paid: true, paidAt: new Date() } }
+        { $set: { paidAt: new Date() } }
+      );
+      const result2 = await orderedGameCollection.updateOne(
+        { _id: ObjectId(service) },
+        {
+          $set: {
+            paid: true,
+            paidAt: new Date(),
+          },
+        },
+        { upsert: true }
       );
 
       if (result.modifiedCount > 0) {
