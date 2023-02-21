@@ -1,9 +1,13 @@
 const express = require("express");
+const app = express();
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const SSLCommerzPayment = require("sslcommerz-lts");
 const jwt = require("jsonwebtoken");
-const app = express();
+
+//middle wares
+app.use(cors());
+app.use(express.json());
 const stripe = require("stripe")(
   "sk_test_51M6QZ6IlSJrakpLcRB6srpU0MYT767eqSG5AHt0bwrfnjHQnZzdps5MpU6R7Qhvip0dC2EQlvbXWQ9KslQKIEVVs00rFRWl8WP"
 );
@@ -17,10 +21,6 @@ require("dotenv").config();
 const store_id = "games63e5aebfd1941";
 const store_passwd = "games63e5aebfd1941@ssl";
 const is_live = false; //true for live, false for sandbox
-
-//middle wares
-app.use(cors());
-app.use(express.json());
 
 const uri =
   "mongodb+srv://game_space:XzY7Rkao7wWWUMtD@cluster0.tkreg8z.mongodb.net/?retryWrites=true&w=majority";
@@ -296,7 +296,6 @@ async function run() {
         favorites: { $all: [userEmail] },
       };
       const exist = await htmlGamesCollection.findOne(query2);
-      v;
       if (!exist) {
         const updatedDoc = {
           $push: {
