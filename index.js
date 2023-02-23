@@ -4,26 +4,22 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const SSLCommerzPayment = require("sslcommerz-lts");
 const jwt = require("jsonwebtoken");
 const app = express();
-const stripe = require("stripe")(
-  "sk_test_51M6QZ6IlSJrakpLcRB6srpU0MYT767eqSG5AHt0bwrfnjHQnZzdps5MpU6R7Qhvip0dC2EQlvbXWQ9KslQKIEVVs00rFRWl8WP"
-);
-const tokenNumber =
-  "07e896b1b1fe22e4c5adc05a098b0cf74727bea64e9c6a178be0b0906cac08782c666128219abd7b480b4a6ddfe6da34a3618579f3d20fce4483f42f1c16a275";
+const stripe = require("stripe")(process.env.STRIPE_ID);
+
 
 const port = process.env.PORT || 9000;
 require("dotenv").config();
 
 // bkash secret kay
-const store_id = "games63e5aebfd1941";
-const store_passwd = "games63e5aebfd1941@ssl";
+const store_id = process.env.BKASH_STORE_ID;
+const store_passwd = process.env.BKASH_STORE_PASSWORD;
 const is_live = false; //true for live, false for sandbox
 
 //middle wares
 app.use(cors());
 app.use(express.json());
 
-const uri =
-  "mongodb+srv://game_space:XzY7Rkao7wWWUMtD@cluster0.tkreg8z.mongodb.net/?retryWrites=true&w=majority";
+const uri =`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.tkreg8z.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
